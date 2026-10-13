@@ -1,0 +1,4 @@
+# The MAS release that templates/ comes from (see README.md). scripts/check-ess-render.sh fails when the chart
+# deploys another MAS version, and checks the templates with this release's mas-cli.
+MAS_TEMPLATES_VERSION=1.25.1
+MAS_CLI_SHA256=ba9bc6ebcb61398f2702d128afb5dfd767734f4b0cb81e3e6c0e48799101ea69  # mas-cli-x86_64-linux.tar.gz (GitHub asset digest)

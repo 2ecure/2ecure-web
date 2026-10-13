@@ -9,13 +9,13 @@ Please see LICENSE files in the repository root for full details.
 {% extends "base.html" %}
 
 {% from "components/idp_brand.html" import logo %}
+{% import "components/2ecure_logo.html" as brand %}
+{% import "components/2ecure_invite.html" as invite %}
 
 {% block content %}
   <form method="POST" class="flex flex-col gap-10">
     <header class="page-heading">
-      <div class="icon">
-        {{ icon.user_profile_solid() }}
-      </div>
+      {{ brand.logo() }}
 
       {% if next and next.kind == "link_upstream" %}
         <div class="header">
@@ -84,12 +84,11 @@ Please see LICENSE files in the repository root for full details.
       {% endif %}
     </div>
 
+    {# 2ecure is invite-only: no general «Create account» call, but a line for invitees. Its link keeps the OAuth
+       parameters, so after registering the invitee returns to the app or web client that asked for the sign-in. #}
     {% if (not next or next.kind != "link_upstream") and features.password_registration %}
       <div class="flex gap-1 justify-center items-center cpd-text-body-md-regular">
-        <p class="cpd-text-secondary">
-          {{ _("mas.login.call_to_register") }}
-        </p>
-
+        <p class="cpd-text-secondary">{{ invite.question(lang) }}</p>
         {% set params = next["params"] | default({}) | to_params(prefix="?") %}
         {{ button.link_text(text=_("action.create_account"), href="/register" ~ params) }}
       </div>

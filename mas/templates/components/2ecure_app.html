@@ -1,0 +1,64 @@
+{#
+2ecure: the way from the account pages into the app (pages/index.html, shown after a registration outside the app).
+The button opens the app's own sign-in, pre-filled with the new username:
+- iPhone: https://2ecure.com/ios/?account_provider=2ecure.com&login_hint=mxid:@<user>:2ecure.com — a universal link
+  (apple-app-site-association, path /ios/*) the app parses as a provisioning link; without the app, Safari shows the
+  website's /ios/ page (install hints).
+- Android: an intent:// link to the app's provisioning filter https://2ecure.com/android/ (package
+  com.twoecure.messenger); without the app, Chrome opens the fallback URL, the website's /android/ page.
+- Everything else (and without JavaScript): chat.2ecure.com.
+-#}
+
+{% macro t(lang, key) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- set de = {"ready": "Dein Konto ist bereit", "intro": "Melde dich jetzt in der 2ecure-App an. Mit diesem Knopf öffnet sie sich direkt bei der Anmeldung.",
+              "intro_web": "Du kannst 2ecure jetzt im Browser nutzen oder dich in der 2ecure-App anmelden.",
+              "open_app": "2ecure-App öffnen", "open_web": "2ecure im Browser öffnen",
+              "no_app": "Noch keine App? Anleitung und Downloads", "welcome": "Willkommen bei 2ecure"} -%}
+{%- set fr = {"ready": "Votre compte est prêt", "intro": "Connectez-vous maintenant dans l'application 2ecure. Ce bouton l'ouvre directement à la connexion.",
+              "intro_web": "Vous pouvez maintenant utiliser 2ecure dans le navigateur ou vous connecter dans l'application 2ecure.",
+              "open_app": "Ouvrir l'application 2ecure", "open_web": "Ouvrir 2ecure dans le navigateur",
+              "no_app": "Pas encore d'application ? Instructions et téléchargements", "welcome": "Bienvenue sur 2ecure"} -%}
+{%- set it = {"ready": "Il tuo account è pronto", "intro": "Accedi ora nell'app 2ecure. Questo pulsante la apre direttamente all'accesso.",
+              "intro_web": "Ora puoi usare 2ecure nel browser o accedere nell'app 2ecure.",
+              "open_app": "Apri l'app 2ecure", "open_web": "Apri 2ecure nel browser",
+              "no_app": "Non hai ancora l'app? Istruzioni e download", "welcome": "Benvenuto su 2ecure"} -%}
+{%- set en = {"ready": "Your account is ready", "intro": "Now sign in in the 2ecure app. This button opens it right at the sign-in.",
+              "intro_web": "You can now use 2ecure in the browser, or sign in in the 2ecure app.",
+              "open_app": "Open the 2ecure app", "open_web": "Open 2ecure in the browser",
+              "no_app": "No app yet? Instructions and downloads", "welcome": "Welcome to 2ecure"} -%}
+{%- set texts = de if l == "de" else fr if l == "fr" else it if l == "it" else en -%}
+{{- texts[key] -}}
+{%- endmacro %}
+
+{% macro apps_url(lang) -%}
+{%- if (lang or "en")[:2] == "de" -%}https://2ecure.com/apps/{%- else -%}https://2ecure.com/en/apps/{%- endif -%}
+{%- endmacro %}
+
+{# The script swaps the button to the device's app link. The username arrives HTML-escaped in data-user. #}
+{% macro open_script(lang) -%}
+<script>
+(function () {
+  var btn = document.getElementById("twoecure-open"), text = document.getElementById("twoecure-intro");
+  if (!btn) return;
+  var user = btn.getAttribute("data-user") || "";
+  var q = "account_provider=2ecure.com" + (user ? "&login_hint=" + encodeURIComponent("mxid:@" + user + ":2ecure.com") : "");
+  var ua = navigator.userAgent || "";
+  var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var android = /Android/.test(ua);
+  if (ios) {
+    btn.href = "https://2ecure.com/ios/?" + q;
+  } else if (android) {
+    var fallback = "https://2ecure.com/android/?" + q;
+    btn.href = "intent://2ecure.com/android/?" + q + "#Intent;scheme=https;package=com.twoecure.messenger;S.browser_fallback_url="
+      + encodeURIComponent(fallback) + ";end";
+  } else {
+    return; // computers keep the browser link
+  }
+  btn.textContent = btn.getAttribute("data-app-label");
+  if (text) text.textContent = text.getAttribute("data-app-text");
+  var web = document.getElementById("twoecure-web");
+  if (web) web.hidden = false;
+})();
+</script>
+{%- endmacro %}

@@ -1,0 +1,57 @@
+{
+  "brand": "2ecure",
+  "default_country_code": "CH",
+  "default_device_display_name": "2ecure Web",
+  "disable_guests": true,
+  "disable_custom_urls": true,
+  "disable_3pid_login": true,
+  "permalink_prefix": "https://chat.2ecure.com",
+  "custom_translations_url": "/modules/2ecure/translations.json",
+  "room_directory": { "servers": ["2ecure.com"] },
+  "branding": {
+    "auth_header_logo_url": "https://2ecure.com/brand/logo-round.svg",
+    "welcome_background_url": "https://2ecure.com/brand/background.svg",
+    "logo_link_url": "https://2ecure.com",
+    "auth_footer_links": [
+      { "text": "Datenschutz", "url": "https://2ecure.com/datenschutz" },
+      { "text": "AGB", "url": "https://2ecure.com/agb" },
+      { "text": "Impressum", "url": "https://2ecure.com/impressum" }
+    ]
+  },
+  "help_url": "https://2ecure.com/hilfe",
+  "help_encryption_url": "https://2ecure.com/hilfe#verschluesselung",
+  "help_key_storage_url": "https://2ecure.com/hilfe#schluesselspeicher",
+  "privacy_policy_url": "https://2ecure.com/datenschutz",
+  "terms_and_conditions_links": [
+    { "text": "Datenschutz", "url": "https://2ecure.com/datenschutz" },
+    { "text": "AGB", "url": "https://2ecure.com/agb" },
+    { "text": "Impressum", "url": "https://2ecure.com/impressum" },
+    { "text": "Quellcode (AGPL)", "url": "https://2ecure.com/source" }
+  ],
+  "report_event": { "admin_message_md": "Meldungen werden vom 2ecure-Team innert 24 Stunden gemäss unseren [AGB](https://2ecure.com/agb) geprüft." },
+  "oidc_metadata": {
+    "client_uri": "https://2ecure.com",
+    "tos_uri": "https://2ecure.com/agb",
+    "policy_uri": "https://2ecure.com/datenschutz"
+  },
+  "logout_redirect_url": "https://2ecure.com",
+  "mobile_guide_toast": false,
+  "desktop_builds": { "available": false },
+  "bug_report_endpoint_url": "local",
+  "map_style_url": null,
+  "existing_issues_url": "https://2ecure.com/support",
+  "new_issue_url": "https://2ecure.com/support",
+  "integrations_ui_url": null,
+  "integrations_rest_url": null,
+  "integrations_widgets_urls": [],
+  "element_call": { "brand": "2ecure Call" },
+  "show_labs_settings": false,
+  "setting_defaults": {
+    "UIFeature.feedback": false,
+    "UIFeature.shareSocial": false,
+    "UIFeature.identityServer": false,
+    "UIFeature.thirdPartyId": false,
+    "UIFeature.locationSharing": false,
+    "urlPreviewsEnabled": false
+  }
+}

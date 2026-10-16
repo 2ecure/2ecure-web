@@ -9,8 +9,8 @@ components and their source: https://2ecure.com/source.
 ## `mas/`: account pages (https://account.2ecure.com)
 
 The templates of [matrix-authentication-service](https://github.com/element-hq/matrix-authentication-service) (MAS).
-The first commit of this repository is the release named in `mas/UPSTREAM`, unchanged; the 2ecure changes are the
-commits after it (`git log -p -- mas/templates`):
+Each MAS release is imported unchanged in its own commit («Import matrix-authentication-service v…»), and the 2ecure
+changes follow in the next commit; `mas/UPSTREAM` names the release in use (`git log -p -- mas/templates`):
 
 - `components/2ecure_logo.html`: the 2ecure logo, inlined; used on the login and registration pages instead of the
   generic user icon.

@@ -4,18 +4,27 @@ Copyright 2021-2024 The Matrix.org Foundation C.I.C.
 
 SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE files in the repository root for full details.
+
+2ecure: the account start page. After a registration outside the app (personal invitation link in the browser)
+the new user lands here; instead of MAS's technical description it leads into the app (components/2ecure_app.html).
 -#}
 
 {% extends "base.html" %}
+{% import "components/2ecure_logo.html" as brand %}
+{% import "components/2ecure_app.html" as app %}
+{% import "components/2ecure_invite.html" as invite %}
 
 {% block content %}
   <main class="flex flex-col justify-center gap-6">
     <header class="page-heading">
+      {{ brand.logo() }}
       <div class="header">
-        <h1 class="title">{{ _("app.human_name") }}</h1>
-        <p class="text">
-          {{ _("app.technical_description", discovery_url=discovery_url) }}
-        </p>
+        {% if current_session is not none %}
+          <h1 class="title">{{ app.t(lang, "ready") }}</h1>
+          <p class="text" id="twoecure-intro" data-app-text="{{ app.t(lang, 'intro') }}">{{ app.t(lang, "intro_web") }}</p>
+        {% else %}
+          <h1 class="title">{{ app.t(lang, "welcome") }}</h1>
+        {% endif %}
       </div>
     </header>
 
@@ -24,13 +33,21 @@ Please see LICENSE files in the repository root for full details.
         {{ _("mas.navbar.signed_in_as", username=current_session.user.username) }}
       </p>
 
-      {{ button.link(text=_("mas.navbar.my_account"), href="/account/") }}
+      <a id="twoecure-open" class="cpd-button" data-kind="primary" data-size="lg" href="https://chat.2ecure.com"
+         data-user="{{ current_session.user.username }}" data-app-label="{{ app.t(lang, 'open_app') }}">{{ app.t(lang, "open_web") }}</a>
+      <a id="twoecure-web" class="cpd-button" data-kind="secondary" data-size="lg" href="https://chat.2ecure.com" hidden>{{ app.t(lang, "open_web") }}</a>
+      {{ button.link_text(text=app.t(lang, "no_app"), href=app.apps_url(lang), class="self-center") }}
+
+      {{ button.link_outline(text=_("mas.navbar.my_account"), href="/account/") }}
       {{ logout.button(text=_("action.sign_out"), csrf_token=csrf_token) }}
+      {{ app.open_script(lang) }}
     {% else %}
       {{ button.link(text=_("action.sign_in"), href="/login") }}
-
       {% if features.password_registration %}
-        {{ button.link_outline(text=_("mas.navbar.register"), href="/register") }}
+        <div class="flex gap-1 justify-center items-center cpd-text-body-md-regular">
+          <p class="cpd-text-secondary">{{ invite.question(lang) }}</p>
+          {{ button.link_text(text=_("action.create_account"), href="/register") }}
+        </div>
       {% endif %}
     {% endif %}
   </main>

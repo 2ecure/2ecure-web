@@ -37,6 +37,7 @@
   "logout_redirect_url": "https://2ecure.com",
   "mobile_guide_toast": false,
   "desktop_builds": { "available": false },
+  "mobile_builds": { "ios": "https://apps.apple.com/ch/app/2ecure-messenger/id6444082229", "android": null, "fdroid": null },
   "bug_report_endpoint_url": "local",
   "map_style_url": null,
   "existing_issues_url": "https://2ecure.com/support",

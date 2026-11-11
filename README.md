@@ -33,7 +33,15 @@ MAS uses the directory as its `templates.path`.
 - `modules/2ecure/`: `index.js`, loaded by the image as a module (the login page's welcome text, device
   verification texts, 2ecure's help centre behind Element's help links), and `translations.json`
   (`custom_translations_url`).
+- `modules/2ecure/privacy.js`: «Who can find you?», as in the 2ecure apps. After signing in, a dialog asks whether
+  everyone on 2ecure may find you in search or only people you already chat with; Settings › Security & Privacy
+  changes it later. The choice is stored as account data `com.2ecure.privacy` (`{"discoverable": true|false}`),
+  which the server reads for the user directory search. Uses Element's module API (dialogs, account data,
+  `window.React`).
 - `brand/brand.sh`: writes copies of the image's `index.html` and `manifest.json` with 2ecure's name and
-  link-preview tags; run at pod start on the same image, the copies are mounted over the originals.
+  link-preview tags, and copies `mobile_guide.html`; run at pod start on the same image, the copies are mounted
+  over the originals.
+- `brand/mobile_guide.html`: 2ecure's page for phones that open the web app without a room link (instead of
+  Element's page, which offers Element's own apps).
 
 Favicons and app icons are the 2ecure logo in PNG sizes, mounted over the image's icons.

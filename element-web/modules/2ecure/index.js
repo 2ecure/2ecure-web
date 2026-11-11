@@ -1,4 +1,5 @@
-// 2ecure for Element Web: the login page's welcome text, and 2ecure's help centre behind Element's help links.
+// 2ecure for Element Web: the login page's welcome text, 2ecure's help centre behind Element's help links, and
+// «Who can find you?» (privacy.js).
 //
 // Element Web loads this file as a runtime module. ESS mounts this directory at /modules/2ecure
 // (deploy/ess/values/60-elementweb.yaml) and the image's entrypoint adds /modules/<name>/index.js to
@@ -6,7 +7,10 @@
 // language in translations.json (config: custom_translations_url); this file only adds the CSS and the links.
 //
 // Element Web refuses to start if a module fails to load, so keep this plain, dependency-free
-// JavaScript. It uses nothing from the module API and therefore accepts every API version.
+// JavaScript. The login text and the help links use nothing from the module API; the privacy choice uses it only
+// where the host has it (PrivacyChoice.isSupported), so the module accepts every API version.
+
+import { PrivacyChoice } from "./privacy.js";
 
 // The languages that have a welcome text in translations.json. Every other language would show
 // Element's «Homeserver» label with nothing under it, so the box is hidden there.
@@ -76,6 +80,10 @@ function redirectHelpLinks(node) {
 export default class TwoecureLogin {
     static moduleApiVersion = "*";
 
+    constructor(api) {
+        this.api = api;
+    }
+
     async load() {
         const style = document.createElement("style");
         style.id = "twoecure-login";
@@ -85,10 +93,27 @@ export default class TwoecureLogin {
         // The links appear whenever their toast, dialog or warning does: rewrite each one as React adds it (or
         // changes its href). React keeps the rewritten href, because it only touches attributes whose value changes.
         redirectHelpLinks(document.documentElement);
+
+        let privacy = null;
+        try {
+            if (PrivacyChoice.isSupported(this.api)) {
+                privacy = new PrivacyChoice(this.api);
+                privacy.start();
+            }
+        } catch (error) {
+            console.error("2ecure: privacy choice", error);
+            privacy = null;
+        }
+
         new MutationObserver((mutations) => {
             for (const mutation of mutations) {
                 if (mutation.type === "attributes") redirectHelpLinks(mutation.target);
                 else mutation.addedNodes.forEach(redirectHelpLinks);
+            }
+            try {
+                privacy?.updateSettings();
+            } catch (error) {
+                console.error("2ecure: privacy settings", error);
             }
         }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ["href"] });
     }

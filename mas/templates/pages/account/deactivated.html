@@ -7,8 +7,11 @@ Please see LICENSE files in the repository root for full details.
 -#}
 
 {% extends "base.html" %}
+{% import "components/2ecure_app_signout.html" as app_signout %}
 
 {% block content %}
+  {# 2ecure: opened from the app with another account there, say so (components/2ecure_app_signout.html). #}
+  {{ app_signout.script(page="other", lang=lang, web_user=user.username, sign_in_label=_("action.sign_in")) }}
   <main class="flex flex-col gap-6">
     <header class="page-heading">
       <div class="icon invalid">

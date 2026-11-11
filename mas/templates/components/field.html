@@ -95,7 +95,8 @@ Please see LICENSE files in the repository root for full details.
 
     {% if field.errors is not empty %}
       {% for field_error in field.errors %}
-        {% if field_error.kind != "unspecified" %}
+        {# 2ecure: the invitation code page explains an invalid code itself (components/2ecure_invite.html). #}
+        {% if field_error.kind != "unspecified" and not (field_error.kind == "invalid" and field.name == "token") %}
           {{ error(error=field_error, field_name=field.name) }}
         {% endif %}
       {% endfor %}

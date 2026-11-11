@@ -16,17 +16,23 @@ Please see LICENSE files in the repository root for full details.
 {% import "components/errors.html" as errors %}
 {% import "components/icon.html" as icon %}
 {% import "components/scope.html" as scope %}
+{% import "components/2ecure_invite.html" as invite %}
+{% import "components/2ecure_app_signout.html" as app_signout %}
+{% import "components/2ecure_colours.html" as colours %}
 
 <!DOCTYPE html>
 <html lang="{{ lang }}">
   <head>
     <meta charset="utf-8">
-    <title>{% block title %}{{ _("app.name") }}{% endblock title %}</title>
+    <title>{% block title %}2ecure{% endblock title %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {{ include_asset('src/entrypoints/vendor.css') | indent(4) | safe }}
     {{ include_asset('src/entrypoints/shared.css') | indent(4) | safe }}
     {{ include_asset('src/entrypoints/templates.css') | indent(4) | safe }}
     {{ include_asset('src/entrypoints/templates.ts') | indent(4) | safe }}
+    {{ colours.style() }}
+    {{ invite.prefill_script() }}
+    {{ app_signout.script(page="other", lang=lang, web_user=(current_session.user.username if (current_session is defined and current_session) else none)) }}
     {% block head %}{% endblock head %}
   </head>
   <body>

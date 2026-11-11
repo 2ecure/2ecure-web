@@ -1,0 +1,15 @@
+{#
+2ecure is black and white. Compound's accent (green) colours the checked state of checkboxes, radio buttons and
+switches; here it takes the primary action colour, like the buttons: black in the light theme, light in the dark
+one. Compound defines its colours in the `cpd-semantic` layer, so this unlayered rule wins.
+-#}
+
+{% macro style() -%}
+<style>
+  :root, [class*=cpd-theme-] {
+    --cpd-color-bg-accent-rest: var(--cpd-color-bg-action-primary-rest);
+    --cpd-color-bg-accent-hovered: var(--cpd-color-bg-action-primary-hovered);
+    --cpd-color-bg-accent-pressed: var(--cpd-color-bg-action-primary-pressed);
+  }
+</style>
+{%- endmacro %}

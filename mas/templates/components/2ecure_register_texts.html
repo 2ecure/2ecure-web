@@ -1,0 +1,68 @@
+{#
+2ecure: German for the registration form's new texts. Since MAS 1.28 the form on /register is a React app, and
+MAS 1.28.0's German frontend translation lacks 11 of its texts (terms checkbox, username check, invalid email or
+username), which then show in English. This replaces exactly those English texts inside #register-form while the
+page is German, and writes ss for ß in the form's German texts (Swiss spelling, as everywhere in 2ecure). Remove the
+English list once MAS ships the German texts (compare the `register` keys of the release's assets/de-*.js with
+assets/en-*.js).
+-#}
+
+{% macro script() -%}
+<script>
+(function () {
+  try {
+    if (!/^de(-|$)/i.test(document.documentElement.lang || "")) return;
+    var root = document.getElementById("register-form");
+    if (!root || typeof MutationObserver === "undefined") return;
+    // English as in MAS 1.28.0 (frontend/locales/en.json, register.*); German in the form's own words (du, ss).
+    var EXACT = {
+      "I agree to the": "Ich akzeptiere die",
+      "Terms and Conditions": "Allgemeinen Geschäftsbedingungen",
+      "This username is available": "Dieser Nutzername ist verfügbar",
+      "Checking availability…": "Verfügbarkeit wird geprüft…",
+      "We couldn't check if this username is available": "Wir konnten nicht prüfen, ob dieser Nutzername verfügbar ist",
+      "Username can only contain lowercase letters, numbers, and the characters . _ - + / =":
+        "Der Nutzername darf nur Kleinbuchstaben, Ziffern und die Zeichen . _ - + / = enthalten",
+      "Username contains invalid characters. Use lowercase letters, numbers, and the characters . _ - + / =":
+        "Der Nutzername enthält ungültige Zeichen. Erlaubt sind Kleinbuchstaben, Ziffern und die Zeichen . _ - + / =",
+      "Please enter a valid email address": "Bitte gib eine gültige E-Mail-Adresse ein",
+      "This field is invalid": "Dieses Feld ist ungültig",
+      "Please complete the CAPTCHA challenge before continuing": "Bitte löse zuerst das CAPTCHA, bevor du weitermachst",
+      "The CAPTCHA is still loading, please wait a moment": "Das CAPTCHA wird noch geladen, bitte einen Moment Geduld"
+    };
+    var PROVIDER = /^Continue with (.+)$/;
+    var ATTRIBUTES = ["placeholder", "aria-label", "title"];
+    var translate = function (text) {
+      var trimmed = text.trim();
+      if (!trimmed) return null;
+      if (Object.prototype.hasOwnProperty.call(EXACT, trimmed)) return text.replace(trimmed, EXACT[trimmed]);
+      var m = PROVIDER.exec(trimmed);
+      if (m) return text.replace(trimmed, "Weiter mit " + m[1]);
+      return text.indexOf("ß") !== -1 ? text.replace(/ß/g, "ss") : null;
+    };
+    var fix = function (node) {
+      if (node.nodeType === 3) {
+        var t = translate(node.nodeValue);
+        if (t !== null && t !== node.nodeValue) node.nodeValue = t;
+      } else if (node.nodeType === 1) {
+        ATTRIBUTES.forEach(function (name) {
+          var value = node.getAttribute(name);
+          var t = value ? translate(value) : null;
+          if (t !== null && t !== value) node.setAttribute(name, t);
+        });
+        for (var child = node.firstChild; child; child = child.nextSibling) fix(child);
+      }
+    };
+    // React mounts the form after this script and swaps texts as the person types: fix every change as it comes.
+    // A fixed text never matches again, so fixing does not loop.
+    new MutationObserver(function (records) {
+      records.forEach(function (r) {
+        if (r.type === "childList") r.addedNodes.forEach(fix);
+        else fix(r.target);
+      });
+    }).observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRIBUTES });
+    fix(root);
+  } catch (e) {}
+})();
+</script>
+{%- endmacro %}

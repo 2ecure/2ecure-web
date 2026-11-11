@@ -1,0 +1,193 @@
+{#
+2ecure is invite-only. Two helpers for invitees:
+- code_headline(lang), code_description(lang): the registration's code step.
+- code_invalid(lang): its error. MAS reports an unknown, expired, revoked or used-up code alike (FieldError::Invalid)
+  and has no text for it, so the page showed the bare word «invalid».
+- question(lang): the line on the login page that leads invitees to the registration (the action text is MAS's own
+  «Create account» translation).
+- gate_description, gate_required, gate_no_invitation, code_entered, change (lang) and gate_script(): the registration
+  page asks for the invitation code before the form (pages/register/index.html). MAS sends the email verification
+  code as soon as the form is sent and asks for the invitation code only afterwards, so without the gate anyone
+  without an invitation could fill in the form and make the server mail any address (owner, 2026-11-09). The gate
+  cannot check the code (MAS has no check before the registration); it keeps the code in sessionStorage like an
+  invitation link, and the code step fills it in. A link with #code= skips the gate. Where a browser refuses
+  sessionStorage, the code also lives in window.twoecureInvitationCode for this page (the link keeps its fragment),
+  and the code step asks for it again.
+- prefill_script(): a personal invitation link https://account.2ecure.com/register#code=<invitation code> fills in
+  the registration's invitation-code step. The fragment never reaches the server; the code waits in this tab's
+  sessionStorage until the page with the code field (the only input named "token"), fills it if empty, and is
+  dropped when that form is sent.
+-#}
+
+{% macro question(lang) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}Du hast einen Einladungscode?
+{%- elif l == "fr" -%}Vous avez un code d'invitation ?
+{%- elif l == "it" -%}Hai un codice d'invito?
+{%- else -%}Got an invitation code?
+{%- endif -%}
+{%- endmacro %}
+
+{# The registration's code step, in the words of the website and the invitations (MAS says «registration token»
+   and «homeserver administrator»). #}
+{% macro code_headline(lang) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}Einladungscode
+{%- elif l == "fr" -%}Code d'invitation
+{%- elif l == "it" -%}Codice d'invito
+{%- else -%}Invitation code
+{%- endif -%}
+{%- endmacro %}
+
+{% macro code_description(lang) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}Gib den Einladungscode ein, den du mit deiner Einladung zu 2ecure erhalten hast.
+{%- elif l == "fr" -%}Saisissez le code d'invitation que vous avez reçu avec votre invitation à 2ecure.
+{%- elif l == "it" -%}Inserisci il codice d'invito che hai ricevuto con l'invito a 2ecure.
+{%- else -%}Enter the invitation code you received with your invitation to 2ecure.
+{%- endif -%}
+{%- endmacro %}
+
+{% macro code_invalid(lang) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}Dieser Einladungscode gilt nicht (mehr): Er wurde vielleicht schon verwendet, ist abgelaufen oder wurde falsch eingegeben. Bitte die Person, die dich eingeladen hat, um eine neue Einladung.
+{%- elif l == "fr" -%}Ce code d'invitation n'est pas (ou plus) valable : il a peut-être déjà été utilisé, a expiré ou a été mal saisi. Demandez une nouvelle invitation à la personne qui vous a invité.
+{%- elif l == "it" -%}Questo codice d'invito non è (più) valido: forse è già stato usato, è scaduto o è stato digitato male. Chiedi un nuovo invito alla persona che ti ha invitato.
+{%- else -%}This invitation code isn't valid (any more): it may already have been used, have expired or have been mistyped. Ask the person who invited you for a new invitation.
+{%- endif -%}
+{%- endmacro %}
+
+{% macro gate_description(lang) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}2ecure gibt es nur mit Einladung. Gib den Einladungscode aus deiner Einladung ein, um dein Konto zu erstellen.
+{%- elif l == "fr" -%}2ecure est accessible uniquement sur invitation. Saisissez le code d'invitation reçu pour créer votre compte.
+{%- elif l == "it" -%}2ecure è accessibile solo su invito. Inserisci il codice d'invito che hai ricevuto per creare il tuo account.
+{%- else -%}2ecure is invitation-only. Enter the invitation code from your invitation to create your account.
+{%- endif -%}
+{%- endmacro %}
+
+{% macro gate_required(lang) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}Gib deinen Einladungscode ein.
+{%- elif l == "fr" -%}Saisissez votre code d'invitation.
+{%- elif l == "it" -%}Inserisci il tuo codice d'invito.
+{%- else -%}Enter your invitation code.
+{%- endif -%}
+{%- endmacro %}
+
+{% macro gate_no_invitation(lang) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}Keine Einladung? Bitte jemanden, der 2ecure nutzt, dich einzuladen.
+{%- elif l == "fr" -%}Pas d'invitation ? Demandez à quelqu'un qui utilise 2ecure de vous inviter.
+{%- elif l == "it" -%}Nessun invito? Chiedi a qualcuno che usa 2ecure di invitarti.
+{%- else -%}No invitation? Ask someone who uses 2ecure to invite you.
+{%- endif -%}
+{%- endmacro %}
+
+{% macro code_entered(lang) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}Einladungscode eingegeben.
+{%- elif l == "fr" -%}Code d'invitation saisi.
+{%- elif l == "it" -%}Codice d'invito inserito.
+{%- else -%}Invitation code entered.
+{%- endif -%}
+{%- endmacro %}
+
+{% macro change(lang) -%}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}Ändern
+{%- elif l == "fr" -%}Modifier
+{%- elif l == "it" -%}Modifica
+{%- else -%}Change
+{%- endif -%}
+{%- endmacro %}
+
+{# Runs right after the gate and the form in pages/register/index.html, before the form's React app mounts. #}
+{% macro gate_script() -%}
+<script>
+(function () {
+  var KEY = "twoecure-invitation-code";
+  var gate = document.getElementById("twoecure-invite-gate");
+  var gateForm = document.getElementById("twoecure-invite-gate-form");
+  var gateError = document.getElementById("twoecure-invite-gate-error");
+  var entered = document.getElementById("twoecure-invite-entered");
+  var change = document.getElementById("twoecure-invite-change");
+  var form = document.getElementById("register-form");
+  if (!gate || !gateForm || !form) return;
+  var input = gateForm.querySelector('input[name="twoecure-code"]');
+  function stored() {
+    var code = "";
+    try { code = sessionStorage.getItem(KEY) || ""; } catch (e) {}
+    return code || window.twoecureInvitationCode || "";
+  }
+  function setError(isShown) {
+    gateError.style.display = isShown ? "" : "none";
+    if (isShown) input.setAttribute("aria-invalid", "true"); else input.removeAttribute("aria-invalid");
+    if (isShown) input.setAttribute("data-invalid", ""); else input.removeAttribute("data-invalid");
+  }
+  // After «Continue», the first field of the form takes the focus (React may still be mounting it).
+  function focusForm(attempt) {
+    var first = form.querySelector('input:not([type="hidden"]), select, textarea');
+    if (first) first.focus();
+    else if (attempt < 30) setTimeout(function () { focusForm(attempt + 1); }, 100);
+  }
+  function show(hasCode) {
+    gate.hidden = hasCode;
+    entered.style.display = hasCode ? "" : "none";
+    form.style.display = hasCode ? "" : "none";
+    if (!hasCode) {
+      setError(false);
+      input.value = stored();
+      input.focus();
+    }
+  }
+  gateForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    var code = input.value.trim();
+    setError(!code);
+    if (!code) {
+      input.focus();
+      return;
+    }
+    window.twoecureInvitationCode = code;
+    try { sessionStorage.setItem(KEY, code); } catch (e) {}
+    show(true);
+    focusForm(0);
+  });
+  change.addEventListener("click", function (event) {
+    event.preventDefault();
+    show(false);
+  });
+  show(stored() !== "");
+})();
+</script>
+{%- endmacro %}
+
+{% macro prefill_script() -%}
+<script>
+(function () {
+  var KEY = "twoecure-invitation-code";
+  var m = /(?:^#|&)code=([^&]+)/.exec(window.location.hash);
+  if (m) {
+    var code = m[1];
+    try { code = decodeURIComponent(code); } catch (e) {}
+    // Also kept in memory for the registration page's gate, in case this browser refuses sessionStorage; the link
+    // then keeps its fragment, and the code step asks for the code again.
+    window.twoecureInvitationCode = code.trim();
+    var kept = false;
+    try { sessionStorage.setItem(KEY, window.twoecureInvitationCode); kept = true; } catch (e) {}
+    if (kept) history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    var field = document.querySelector('input[name="token"]');
+    if (!field) return;
+    var code = null;
+    try { code = sessionStorage.getItem(KEY); } catch (e) {}
+    if (code && !field.value) field.value = code;
+    if (field.form) field.form.addEventListener("submit", function () {
+      try { sessionStorage.removeItem(KEY); } catch (e) {}
+    });
+  });
+})();
+</script>
+{%- endmacro %}

@@ -12,15 +12,25 @@ The templates of [matrix-authentication-service](https://github.com/element-hq/m
 Each MAS release is imported unchanged in its own commit («Import matrix-authentication-service v…»), and the 2ecure
 changes follow in the next commit; `mas/UPSTREAM` names the release in use (`git log -p -- mas/templates`):
 
-- `components/2ecure_logo.html`: the 2ecure logo, inlined; used on the login and registration pages instead of the
-  generic user icon.
+- `components/2ecure_logo.html`, `components/2ecure_logo_animated.html`: the 2ecure logo, inlined (animated on
+  the login and registration pages); used instead of the generic user icon.
 - `pages/login.html`, `pages/index.html`: no «Create account» link (2ecure is invitation-only); a line for people
-  with an invitation code instead (`components/2ecure_invite.html`).
-- `components/2ecure_invite.html`: reads an invitation code from a personal link (`/register#code=…`, the fragment
-  never reaches the server) and fills it in on the code step.
-- `pages/register/steps/registration_token.html`: «Einladungscode» instead of «registration token» and «homeserver».
+  with an invitation code instead.
+- `pages/register/index.html`, `components/2ecure_invite.html`: the invitation code comes first. Since MAS 1.28 the
+  registration form is a React app that mails the email verification code when it is sent, so the form stays
+  hidden until a code is entered (or comes from a personal link, `/register#code=…`; the fragment never reaches the
+  server); the code step (`pages/register/steps/registration_token.html`, «Einladungscode») fills it in and
+  explains an invalid code (`components/field.html` leaves out MAS's bare «invalid» there).
+- `components/2ecure_register_texts.html`: German for the texts of the registration form that MAS 1.28.0 leaves in
+  English, with ss for ß.
+- `components/2ecure_colours.html` (in `base.html`, `app.html`): checkboxes, radio buttons and switches in the
+  primary action colour (black, light in the dark theme) instead of green.
 - `components/2ecure_app.html`, `pages/index.html`: the account start page leads into the app.
-- `base.html`, `app.html`: «2ecure» as the page title; `base.html` also loads the invitation-code script.
+- `components/2ecure_app_signout.html` (in `base.html`, `app.html`, `pages/login.html`,
+  `pages/account/deactivated.html`): for account pages opened from the 2ecure apps. If the web sign-in is another
+  account than the app's, it says so and offers to end that web session; «Sign out of account» signs the app out
+  too (it hands back to the app's `/signed-out` link).
+- `base.html`, `app.html`: «2ecure» as the page title.
 
 MAS uses the directory as its `templates.path`.
 

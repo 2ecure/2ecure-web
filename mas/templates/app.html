@@ -9,13 +9,18 @@ Please see LICENSE files in the repository root for full details.
 
 {# Must be kept in sync with frontend/index.html #}
 {% set _ = translator(lang) %}
+{% import "components/2ecure_app_signout.html" as app_signout %}
+{% import "components/2ecure_colours.html" as colours %}
 
 <!DOCTYPE html>
 <html lang="{{ lang }}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ _("app.name") }}</title>
+    <title>2ecure</title>
+    {{ colours.style() }}
+    {# 2ecure: before the account app, so that it sees the sign-out request (components/2ecure_app_signout.html). #}
+    {{ app_signout.script(page="app", lang=lang) }}
     {{ include_asset('src/entrypoints/main.tsx') | indent(4) | safe }}
     {# Pre-load the locale data for the current language #}
     {{ include_asset('locales/' ~ lang ~ '.json') | indent(4) | safe }}

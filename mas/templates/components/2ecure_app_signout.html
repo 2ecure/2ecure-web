@@ -1,0 +1,219 @@
+{#
+2ecure: the account pages opened from the iOS app (Settings › «Manage account & devices», «Delete account»). The apps
+open them with #2ecure-app=ios|android&user=<their Matrix ID> (AccountPageLinks in the iOS and Android forks); in that browser tab:
+
+- Same account: the page uses the phone's web sign-in, which can belong to another account than the app's (after a QR
+  sign-in from another device, an account switch or a deletion: on 2026-11-07 the app was @fiddelbums, the page showed
+  the deleted @fuddi). The account app (page "app") asks MAS who is signed in and, if that is not the app's account,
+  covers the page with a note and a button that ends this web session and reopens the page, so the sign-in comes up;
+  the sign-in page (page "login") fills in the app's username. Pages that show a signed-in or deleted account
+  (page "other" with web_user) say so in a note.
+- Sign-out: «Sign out of account» only ends this browser's session (MAS's EndBrowserSession). The account app notes a
+  successful one; the sign-in page that MAS shows right after it sends the tab to the app's callback, which closes the
+  app's web view, and the app then signs out the way «Remove this device» does.
+
+Other browsers and the app's own sign-in are not affected: without the marker nothing happens. The user ID from the
+link is checked against 2ecure's ID format and only ever shown as text.
+-#}
+
+{% macro texts(lang) -%}
+{#- {app} and {web}: Matrix IDs (shown bold), {signin}: the page's own «Sign in» button label. -#}
+{%- set l = (lang or "en")[:2] -%}
+{%- if l == "de" -%}
+{{ {"title": "Anderes Konto",
+    "body": "Diese Seite ist als {web} angemeldet, die App als {app}. Melde dich hier mit {app} an, damit du das richtige Konto bearbeitest.",
+    "button": "Weiter als {app}",
+    "note": "In der App bist du als {app} angemeldet, hier als {web}.",
+    "note_signin": "In der App bist du als {app} angemeldet. Tippe auf «{signin}», um hier mit diesem Konto weiterzumachen.",
+    "handback": "Du hast dich auf der Kontoseite abgemeldet. Melde dich jetzt auch in der App ab.",
+    "handback_button": "In der App abmelden"} | tojson }}
+{%- elif l == "fr" -%}
+{{ {"title": "Autre compte",
+    "body": "Cette page est connectée en tant que {web}, l'app en tant que {app}. Connectez-vous ici avec {app} pour modifier le bon compte.",
+    "button": "Continuer en tant que {app}",
+    "note": "Dans l'app, vous êtes connecté en tant que {app}, ici en tant que {web}.",
+    "note_signin": "Dans l'app, vous êtes connecté en tant que {app}. Touchez « {signin} » pour continuer ici avec ce compte.",
+    "handback": "Vous vous êtes déconnecté sur la page de compte. Déconnectez-vous maintenant aussi dans l'app.",
+    "handback_button": "Se déconnecter dans l'app"} | tojson }}
+{%- elif l == "it" -%}
+{{ {"title": "Altro account",
+    "body": "Questa pagina ha l'accesso come {web}, l'app come {app}. Accedi qui con {app} per modificare l'account giusto.",
+    "button": "Continua come {app}",
+    "note": "Nell'app hai l'accesso come {app}, qui come {web}.",
+    "note_signin": "Nell'app hai l'accesso come {app}. Tocca «{signin}» per continuare qui con questo account.",
+    "handback": "Sei uscito nella pagina dell'account. Esci ora anche dall'app.",
+    "handback_button": "Esci dall'app"} | tojson }}
+{%- else -%}
+{{ {"title": "Another account",
+    "body": "This page is signed in as {web}, the app as {app}. Sign in here with {app} so that you manage the right account.",
+    "button": "Continue as {app}",
+    "note": "In the app you're signed in as {app}, here as {web}.",
+    "note_signin": "In the app you're signed in as {app}. Tap “{signin}” to continue here with that account.",
+    "handback": "You signed out on the account page. Now sign out in the app too.",
+    "handback_button": "Sign out in the app"} | tojson }}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro script(page, lang="en", web_user=none, sign_in_label=none) -%}
+<script>
+(function () {
+  var APP = "twoecure-app", USER = "twoecure-app-user", ENDED = "twoecure-session-ended";
+  var CALLBACKS = { ios: "com.2ecure.chat:/signed-out", android: "com.2ecure:/signed-out" };
+  var SERVER = ":2ecure.com";
+  var T = {{ texts(lang) }};
+  // Builds text with the IDs as <strong>: never as HTML, the user ID comes from a link.
+  function rich(el, text, values) {
+    text.split(/(\{app\}|\{web\}|\{signin\})/).forEach(function (part) {
+      var key = part.slice(1, -1);
+      if (part.charAt(0) === "{" && Object.prototype.hasOwnProperty.call(values, key)) {
+        var strong = document.createElement(key === "signin" ? "span" : "strong");
+        strong.textContent = values[key];
+        el.appendChild(strong);
+      } else if (part) {
+        el.appendChild(document.createTextNode(part));
+      }
+    });
+    return el;
+  }
+  function whenReady(f) { if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", f); else f(); }
+  try {
+    var m = /(?:^#|&)2ecure-app=([a-z]+)/.exec(window.location.hash);
+    if (m && CALLBACKS[m[1]]) {
+      sessionStorage.setItem(APP, m[1]);
+      var u = /(?:^#|&)user=([^&]+)/.exec(window.location.hash);
+      var id = u ? decodeURIComponent(u[1]) : "";
+      if (/^@[a-z0-9._=\/+-]+$/.test(id.slice(0, id.length - SERVER.length)) && id.slice(-SERVER.length) === SERVER) {
+        sessionStorage.setItem(USER, id);
+      } else {
+        sessionStorage.removeItem(USER);
+      }
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    var app = sessionStorage.getItem(APP), expected = sessionStorage.getItem(USER);
+    if (!app || !CALLBACKS[app]) return;
+{%- if page == "app" %}
+    sessionStorage.removeItem(ENDED);
+    var originalFetch = window.fetch;
+    window.fetch = function (input, init) {
+      var request = originalFetch.apply(this, arguments);
+      if (init && typeof init.body === "string" && init.body.indexOf("mutation EndBrowserSession") !== -1) {
+        request.then(function (response) {
+          if (!response.ok) return;
+          // Noted at once: after a successful sign-out the account app reloads the page right away.
+          sessionStorage.setItem(ENDED, String(Date.now()));
+          response.clone().json().then(function (json) {
+            if (!json || json.errors) sessionStorage.removeItem(ENDED);
+          });
+        }).catch(function () {});
+      }
+      return request;
+    };
+    if (expected) {
+      var graphql = function (query, variables) {
+        return originalFetch("/graphql", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+                                           body: JSON.stringify({ query: query, variables: variables || {} }) })
+          .then(function (r) { return r.json(); });
+      };
+      graphql("query TwoecureViewer { viewer { __typename ... on User { username } } viewerSession { __typename ... on BrowserSession { id } } }")
+        .then(function (json) {
+          var viewer = json && json.data && json.data.viewer;
+          if (!viewer || viewer.__typename !== "User") return;
+          var web = "@" + viewer.username + SERVER;
+          if (web === expected) return;
+          var session = json.data.viewerSession && json.data.viewerSession.__typename === "BrowserSession" ? json.data.viewerSession.id : null;
+          whenReady(function () {
+            var cover = document.createElement("div");
+            cover.setAttribute("role", "alertdialog");
+            cover.setAttribute("aria-modal", "true");
+            cover.style.cssText = "position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;" +
+              "padding:var(--cpd-space-6x,24px);background:var(--cpd-color-bg-canvas-default,Canvas);color:var(--cpd-color-text-primary,CanvasText)";
+            var box = document.createElement("div");
+            box.style.cssText = "width:100%;max-width:378px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--cpd-space-4x,16px)";
+            var title = document.createElement("h1");
+            title.style.cssText = "margin:0;font:var(--cpd-font-heading-md-semibold,600 1.5rem/1.33 system-ui)";
+            title.textContent = T.title;
+            var text = rich(document.createElement("p"), T.body, { app: expected, web: web });
+            text.style.cssText = "margin:0 0 var(--cpd-space-4x,16px);font:var(--cpd-font-body-lg-regular,1.0625rem/1.5 system-ui);color:var(--cpd-color-text-secondary,GrayText);overflow-wrap:anywhere";
+            var button = document.createElement("button");
+            button.type = "button";
+            button.style.cssText = "width:100%;min-height:48px;padding:var(--cpd-space-3x,12px) var(--cpd-space-6x,24px);border:0;border-radius:9999px;cursor:pointer;" +
+              "background:var(--cpd-color-bg-action-primary-rest,CanvasText);color:var(--cpd-color-text-on-solid-primary,Canvas);font:var(--cpd-font-body-lg-semibold,600 1.0625rem/1.5 system-ui);overflow-wrap:anywhere";
+            button.textContent = T.button.split("{app}").join(expected);
+            button.addEventListener("click", function () {
+              button.disabled = true;
+              // Not EndBrowserSession: this must not sign the app out (the wrapper above watches for that name).
+              var end = session ? graphql("mutation TwoecureEndWebSession($id: ID!) { endBrowserSession(input: { browserSessionId: $id }) { status } }",
+                                          { id: session }) : Promise.resolve();
+              end.catch(function () {}).then(function () { window.location.replace("/account/"); });
+            });
+            box.appendChild(title);
+            box.appendChild(text);
+            box.appendChild(button);
+            cover.appendChild(box);
+            document.body.appendChild(cover);
+            button.focus();
+          });
+        }).catch(function () {});
+    }
+{%- elif page == "login" %}
+    var ended = Number(sessionStorage.getItem(ENDED) || 0);
+    sessionStorage.removeItem(ENDED);
+    if (ended && Date.now() - ended < 60000) {
+      window.location.replace(CALLBACKS[app]);
+      // Chrome (Android's Custom Tab) usually opens an app only on a tap: offer one.
+      if (app === "android") {
+        whenReady(function () {
+          var box = document.createElement("div");
+          box.setAttribute("role", "status");
+          box.style.cssText = "display:flex;flex-direction:column;gap:var(--cpd-space-4x,16px);margin-bottom:var(--cpd-space-6x,24px)";
+          var text = document.createElement("p");
+          text.className = "text";
+          text.textContent = T.handback;
+          var link = document.createElement("a");
+          link.className = "cpd-button";
+          link.setAttribute("data-kind", "primary");
+          link.setAttribute("data-size", "lg");
+          link.href = CALLBACKS[app];
+          link.textContent = T.handback_button;
+          box.appendChild(text);
+          box.appendChild(link);
+          var heading = document.querySelector(".page-heading");
+          if (heading) {
+            heading.parentNode.insertBefore(box, heading.nextSibling);
+          } else {
+            var main = document.querySelector("main") || document.body;
+            main.insertBefore(box, main.firstChild);
+          }
+        });
+      }
+      return;
+    }
+    if (expected) {
+      whenReady(function () {
+        var field = document.querySelector('input[name="username"]');
+        if (field && !field.value) field.value = expected.slice(1, expected.length - SERVER.length);
+      });
+    }
+{%- else %}
+    var web = {{ web_user | tojson }};
+    if (expected && web && "@" + web + SERVER !== expected) {
+      var signIn = {{ sign_in_label | tojson }};
+      whenReady(function () {
+        var note = rich(document.createElement("p"), signIn ? T.note_signin : T.note, { app: expected, web: "@" + web + SERVER, signin: signIn || "" });
+        note.className = "text";
+        note.setAttribute("role", "note");
+        note.style.overflowWrap = "anywhere";
+        var header = document.querySelector(".page-heading .header");
+        if (header) {
+          header.appendChild(note);
+        } else {
+          var main = document.querySelector("main") || document.body;
+          main.insertBefore(note, main.firstChild);
+        }
+      });
+    }
+{%- endif %}
+  } catch (e) {}
+})();
+</script>
+{%- endmacro %}

@@ -8,6 +8,11 @@ Please see LICENSE files in the repository root for full details.
 -#}
 
 {% extends "base.html" %}
+{% import "components/2ecure_logo_animated.html" as brand %}
+{% import "components/2ecure_register_texts.html" as register_texts %}
+{% import "components/2ecure_invite.html" as invite %}
+{% import "components/field.html" as field %}
+{% import "components/button.html" as button %}
 
 {% block head %}
   {{ include_asset('src/entrypoints/register.tsx') | indent(4) | safe }}
@@ -17,14 +22,34 @@ Please see LICENSE files in the repository root for full details.
 
 {% block content %}
   <header class="page-heading">
-    <div class="icon">
-      {{ icon.user_profile_solid() }}
-    </div>
+    {{ brand.logo() }}
 
     <div class="header">
       <h1 class="title">{{ _("mas.register.create_account.heading") }}</h1>
     </div>
   </header>
+
+  {# 2ecure: the invitation code first; the form appears once there is one (components/2ecure_invite.html). #}
+  <div id="twoecure-invite-gate" hidden>
+    <form id="twoecure-invite-gate-form" class="cpd-form-root" novalidate>
+      <p class="cpd-text-secondary cpd-text-body-md-regular">{{ invite.gate_description(lang) }}</p>
+      {% call(f) field.field(label=invite.code_headline(lang), name="twoecure-code") %}
+        <input name="{{ f.name }}" id="{{ f.id }}" type="text" class="cpd-text-control"
+          autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+          aria-describedby="twoecure-invite-gate-error" />
+        <div id="twoecure-invite-gate-error" class="cpd-form-message cpd-form-error-message" role="alert" style="display: none">
+          {{ invite.gate_required(lang) }}
+        </div>
+      {% endcall %}
+      {{ button.button(text=_("action.continue")) }}
+      <p class="cpd-text-secondary cpd-text-body-md-regular text-center">{{ invite.gate_no_invitation(lang) }}</p>
+    </form>
+  </div>
+
+  <div id="twoecure-invite-entered" class="flex gap-1 justify-center items-center cpd-text-body-md-regular" style="display: none">
+    <p class="cpd-text-secondary">{{ invite.code_entered(lang) }}</p>
+    <a id="twoecure-invite-change" class="cpd-link" data-kind="primary" href="#">{{ invite.change(lang) }}</a>
+  </div>
 
   <div id="register-form"
        data-csrf-token="{{ csrf_token }}"
@@ -49,6 +74,9 @@ Please see LICENSE files in the repository root for full details.
   <div id="register-form-error" class="critical-notice" hidden>
     {{ _("mas.loading_failed") }}
   </div>
+
+  {{ invite.gate_script() }}
+  {{ register_texts.script() }}
 
   <noscript>
     {# The skeleton would otherwise sit above this message forever #}
